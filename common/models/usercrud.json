@@ -1,0 +1,28 @@
+{
+  "name": "usercrud",
+  "plural": "usercrud",
+  "base": "PersistedModel",
+  "idInjection": true,
+  "options": {
+    "validateUpsert": true
+  },
+  "properties": {
+    "id": {
+      "type": "number",
+      "required": true
+    },
+    "name": {
+      "type": "string"
+    },
+    "amount": {
+      "type": "number"
+    },
+    "files": {
+      "type": "string"
+    }        
+  },
+  "validations": [],
+  "relations": {},
+  "acls": [],
+  "methods": {}
+}

@@ -1,0 +1,188 @@
+<html>
+   <head>
+      <title>Form Demo</title>
+      <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+      <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.0/angular.min.js"></script> 
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/danialfarid-angular-file-upload/12.2.13/ng-file-upload-shim.js"></script>  
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/danialfarid-angular-file-upload/12.2.13/ng-file-upload.js"></script>  
+      <script>
+         var app = angular.module('myApp', ['ngFileUpload']);
+         
+         app.directive('numbersOnly', function () {
+            return {
+                require: 'ngModel',
+                link: function (scope, element, attr, ngModelCtrl) {
+                    function fromUser(text) {
+                        if (text) {
+                            var transformedInput = text.replace(/[^0-9]/g, '');
+         
+                            if (transformedInput !== text) {
+                                ngModelCtrl.$setViewValue(transformedInput);
+                                ngModelCtrl.$render();
+                            }
+                            return transformedInput;
+                        }
+                        return undefined;
+                    }            
+                    ngModelCtrl.$parsers.push(fromUser);
+                }
+            };
+         });
+         app.controller('AppController', ['$scope', '$http', function($scope, $http) {        
+          
+          
+              var vm = this;
+              vm.isSubmitted = false;
+              $scope.validateInput = function(name, type) {
+                  if (vm.formValidate) {
+                      var input = vm.formValidate[name];
+                      return (input.$valid || vm.isSubmitted) && input.$error[type];
+                  }
+              };
+
+
+
+              $scope.submitForm = function(action) {
+                  if (vm.formValidate.$valid) {
+                      vm.isSubmitted = false;
+                      $scope.create();
+                  } else {
+                      vm.isSubmitted = true;
+                  }
+              };
+
+
+
+              $scope.create = function() {
+                 
+                  if (!$scope.user.id) {
+
+                      $http.post('http://0.0.0.0:3000/api/usercrud', $scope.user).
+                      then(function(response) {
+                          $scope.inits();
+                      });
+
+                  } else {
+
+                      $http.put('http://0.0.0.0:3000/api/usercrud/' + $scope.user.id, $scope.user).
+                      then(function(response) {
+                          $scope.inits();
+                      });
+                  }
+              };
+
+
+              $scope.uploaFile = function(file, fileObject) {
+                  $scope.user.files = file[0].name;
+
+              }
+
+              $scope.inits = function() {
+                  $http.get('http://0.0.0.0:3000/api/usercrud').
+                  then(function(response) {
+                      $scope.users = response.data;
+                  });
+              }
+
+              $scope.edit = function(user) {
+                  $scope.user = angular.copy(user);
+              }
+
+              $scope.remove = function(remove) {
+                  console.log('remove', remove.id);
+                  $http.delete('http://0.0.0.0:3000/api/usercrud/' + remove.id).then(function(response) {
+                      $scope.inits();
+                  });
+              }
+                       
+         }]);
+      </script>  
+   </head>
+   <body ng-app="myApp">
+      <div style="padding: 80px;" class="generic-container" ng-controller="AppController as ctrl">
+         <div class="panel panel-default">
+            <div class="panel-heading"><span class="lead">User Registration Form </span></div>
+            <div class="formcontainer">
+               <form ng-submit="submitForm(user.id ? 'Submit' : 'Update')" role="form" name="ctrl.formValidate" class="form-horizontal" data-parsley-validate="" novalidate="">
+                  <div class="row">
+                     <div class="form-group col-md-12">
+                        <label class="col-md-2 control-lable">Name </label>
+                        <div class="col-md-7">
+                           <input type="text" ng-model="user.username" name="username" class="username form-control input-sm" placeholder="Enter your name" required ng-minlength="3"/>                          
+                        </div>
+                        <span ng-show="validateInput('username', 'required')"  class="text-danger">Please enter the 10 digits mobile number</span>
+                     </div>
+                  </div>
+                  <div class="row">
+                     <div class="form-group col-md-12">
+                        <label class="col-md-2 control-lable" for="email">Email</label>
+                        <div class="col-md-7">
+                           <input type="email" ng-model="user.email" id="email" class="email form-control input-sm" name="email" placeholder="Enter your Email" required  pattern="^[_a-zA-Z0-9]+(\.[_a-zA-Z0-9]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$" data-parsley-id="0951"/>
+                        </div>
+                        <span ng-show="validateInput('email', 'required')" class="text-danger">Please enter the email address</span>
+                        <span ng-show="validateInput('email', 'pattern')" class="text-danger">Enter valid email ID</span>
+                     </div>
+                  </div>
+                  <!-- Amount only allow positive numbers others blocked by numbers-only directives -->
+                  <div class="row">
+                     <div class="form-group col-md-12">
+                        <label class="col-md-2 control-lable" >Amount</label>
+                        <div class="col-md-7">
+                           <input type="text" ng-model="user.amount"  class="form-control input-sm" name="amount" numbers-only placeholder="Enter your amount" required />
+                        </div>
+                        <span ng-show="validateInput('amount', 'required')"  class="text-danger">Please enter  amount </span>
+                     </div>
+                  </div>
+                  <div class="row">
+                     <div class="form-group col-md-12">
+                        <label class="col-md-2 control-lable" for="address">Image</label>
+                        <div class="col-md-7">
+
+                           <input class="pull-left"  type="file" ng-model="user.files" id="inputFile2"  ngf-select="uploaFile(user.files, user)" name="paymentbill"  multiple="" value="user.files">
+                            <span ng-if="user.id">{{user.files}}</span>                         
+
+                        </div>
+                     </div>
+                  </div>
+                  <div class="row">
+                     <div class="form-actions " style="text-align: center;">
+                  
+                        <input type="submit"  value="{{!user.id ? 'Submit' : 'Update'}}" class="btn btn-primary btn-sm" >
+                        <!-- <button type="button" ng-click="ctrl.reset()" class="btn btn-warning btn-sm" ng-disabled="myForm.$pristine">Reset Form</button> -->
+                     </div>
+                  </div>
+               </form>
+            </div>
+         </div>
+         <div class="panel panel-default">
+            <!-- Default panel contents -->
+            <div class="panel-heading"><span class="lead">List of Users </span></div>
+            <div class="tablecontainer" ng-init="inits()">
+               <table class="table table-hover">
+                  <thead>
+                     <tr>
+                        <th>ID.</th>
+                        <th>Name</th>
+                        <th>Amount</th>
+                        <th>Email</th>
+                        <th>File</th>
+                        <th width="100">
+                     </tr>
+                  </thead>
+                  <tbody>
+                     <tr ng-repeat="user in users">
+                        <td><span ng-bind="user.id"></span></td>
+                        <td><span ng-bind="user.username"></span></td>
+                        <td><span ng-bind="user.amount"></span></td>
+                        <td><span ng-bind="user.email"></span></td>
+                         <td><span ng-bind="user.files"></span></td>
+                        <td>
+                           <button type="button" ng-click="edit(user)" class="btn btn-success custom-width">Edit</button>  <button type="button" ng-click="remove(user)" class="btn btn-danger custom-width">Remove</button>
+                     </tr>
+                  </tbody>
+               </table>
+            </div>
+         </div>
+      </div>
+   </body>
+</html>
